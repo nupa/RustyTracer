@@ -7,6 +7,7 @@ use ray::Ray;
 
 mod ray;
 mod color;
+mod hittable;
 
 fn hit_sphere(center: &Point3<f64>, radius: f64, ray: &Ray) -> Option<Vector3<f64>> {
     let oc = ray.origin - center;
