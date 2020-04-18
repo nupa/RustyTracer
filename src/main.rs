@@ -8,18 +8,29 @@ use ray::Ray;
 mod ray;
 mod color;
 
-fn hit_sphere(center: &Point3<f64>, radius: f64, ray: &Ray) -> bool {
+fn hit_sphere(center: &Point3<f64>, radius: f64, ray: &Ray) -> Option<Vector3<f64>> {
     let oc = ray.origin - center;
     let a = ray.direction.dot(ray.direction);
     let b = 2.0 * oc.dot(ray.direction);
     let c = oc.dot(oc) - radius*radius;
     let discriminant = b*b - 4.0*a*c;
-    return discriminant > 0.0;
+    if discriminant > 0.0 {
+        let t = (-b - discriminant.sqrt() ) / (2.0 * a);
+        let hit_point = ray.point_at(t);
+        let n = (hit_point - center) / radius;
+        return Some(n);
+    } else {
+        return None;
+    }
 }
 
 fn color(ray: &Ray) -> Color {
-    if hit_sphere(&Point3::new(0.0, 0.0, -1.0), 0.5, ray) {
-        return Color::new(255.0, 0.0, 0.0);
+    let hit_normal = hit_sphere(&Point3::new(0.0, 0.0, -1.0), 0.5, ray);
+    if hit_normal != None {
+        let r = hit_normal.unwrap().x + 1.0;
+        let g = hit_normal.unwrap().y + 1.0;
+        let b = hit_normal.unwrap().z + 1.0;
+        return 0.5*Color::new(r, g, b);
     }
 
     let unit_direction = ray.direction.normalize();
@@ -51,8 +62,8 @@ fn main() {
         for i in 0..width {
             let u = (i as f64) / (width as f64);
             let v = (j as f64) / (height as f64);
-            let point_to = lower_left_corner + u*horizontal + v*vertical;
-            let r = Ray::new(origin, Vector3::new(point_to.x, point_to.y, point_to.z));
+            let direction = (lower_left_corner + u*horizontal + v*vertical) - origin;
+            let r = Ray::new(origin, direction);
             img.put_pixel(i, height - j - 1, color_to_rgb(&color(&r)));
         }
     }
