@@ -4,33 +4,21 @@ use cgmath::{Point3, Vector3};
 use cgmath::prelude::*;
 use image::{ImageBuffer, RgbImage, Rgb};
 use ray::Ray;
+use crate::sphere::Sphere;
+use crate::hittable::Hittable;
 
 mod ray;
 mod color;
 mod hittable;
-
-fn hit_sphere(center: &Point3<f64>, radius: f64, ray: &Ray) -> Option<Vector3<f64>> {
-    let oc = ray.origin - center;
-    let a = ray.direction.dot(ray.direction);
-    let b = 2.0 * oc.dot(ray.direction);
-    let c = oc.dot(oc) - radius*radius;
-    let discriminant = b*b - 4.0*a*c;
-    if discriminant > 0.0 {
-        let t = (-b - discriminant.sqrt() ) / (2.0 * a);
-        let hit_point = ray.point_at(t);
-        let n = (hit_point - center) / radius;
-        return Some(n);
-    } else {
-        return None;
-    }
-}
+mod sphere;
 
 fn color(ray: &Ray) -> Color {
-    let hit_normal = hit_sphere(&Point3::new(0.0, 0.0, -1.0), 0.5, ray);
-    if hit_normal != None {
-        let r = hit_normal.unwrap().x + 1.0;
-        let g = hit_normal.unwrap().y + 1.0;
-        let b = hit_normal.unwrap().z + 1.0;
+    let sphere = Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5);
+    let hit = sphere.hit(ray, 0.0, 5000.0);
+    if let Some(h) = hit {
+        let r = h.normal.x + 1.0;
+        let g = h.normal.y + 1.0;
+        let b = h.normal.z + 1.0;
         return 0.5*Color::new(r, g, b);
     }
 
@@ -47,8 +35,6 @@ fn color_to_rgb(color: &Color) -> Rgb<u8> {
 }
 
 fn main() {
-    println!("Hello, world!");
-
     let height: u32 = 100;
     let width: u32 = 200;
 
