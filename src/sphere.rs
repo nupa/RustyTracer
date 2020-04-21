@@ -23,13 +23,28 @@ impl Hittable for Sphere {
         let b = 2.0 * oc.dot(ray.direction);
         let c = oc.dot(oc) - self.radius*self.radius;
         let discriminant = b*b - 4.0*a*c;
-        return if discriminant > 0.0 {
-            let t = (-b - discriminant.sqrt()) / (2.0 * a);
-            let hit_point = ray.point_at(t);
-            let n = (hit_point - self.center) / self.radius;
-            Some(HitRecord::new(hit_point, n))
-        } else {
-            None
+        if discriminant > 0.0 {
+            let root = discriminant.sqrt();
+
+            fn hit_record(t: f64, ray: &Ray, center: &Point3<f64>, radius: f64) -> HitRecord {
+                let hit_point = ray.point_at(t);
+                let outward_normal = (hit_point - center) / radius;
+                let ff = ray.direction.dot(outward_normal) < 0.0;
+                let normal = if ff {outward_normal} else {-1.0*outward_normal};
+                return HitRecord::new(t, hit_point, normal, ff);
+            }
+
+            // check if either of hits match timelimits
+            let t = (-b - root) / (2.0 * a);
+            if t > t_min && t < t_max {
+                return Some(hit_record(t, ray, &self.center, self.radius));
+            }
+            let t = (-b + root) / (2.0 * a);
+            if t > t_min && t < t_max {
+                return Some(hit_record(t, ray, &self.center, self.radius))
+            }
         }
+        return None
+
     }
 }
