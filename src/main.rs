@@ -11,6 +11,7 @@ use std::f64;
 use crate::camera::Camera;
 use rand::random;
 use std::time::Instant;
+use crate::material::{random_in_unit_sphere, random_unit_vector};
 
 mod ray;
 mod color;
@@ -18,15 +19,22 @@ mod hittable;
 mod hittable_list;
 mod sphere;
 mod camera;
+mod material;
 
-fn color(ray: &Ray, world: &dyn Hittable) -> Color {
+fn color(ray: &Ray, world: &dyn Hittable, depth: i32) -> Color {
     // let sphere = Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5);
     // let hit = sphere.hit(ray, 0.0, 5000.0);
-    if let Some(h) = world.hit(ray, 0.0, f64::MAX) {
-        let r = h.normal.x + 1.0;
+    if depth >= 50 {
+        return Color::black();
+    }
+
+    if let Some(h) = world.hit(ray, 0.001, f64::MAX) {
+        let target = h.p + h.normal + random_unit_vector();
+        /* let r = h.normal.x + 1.0;
         let g = h.normal.y + 1.0;
-        let b = h.normal.z + 1.0;
-        return 0.5*Color::new(r, g, b);
+        let b = h.normal.z + 1.0; */
+        // return 0.5*Color::new(r, g, b);
+        return 0.5 * color(&Ray::new(h.p, target - h.p), world, depth +1);
     }
 
     let unit_direction = ray.direction.normalize();
@@ -35,9 +43,10 @@ fn color(ray: &Ray, world: &dyn Hittable) -> Color {
 }
 
 fn color_to_rgb(color: &Color) -> Rgb<u8> {
-    let ir = (255.99 * color.r) as u8;
-    let ig = (255.99 * color.g) as u8;
-    let ib = (255.99 * color.b) as u8;
+    let gamma_cor = color.gamma_correct();
+    let ir = (255.99 * gamma_cor.r) as u8;
+    let ig = (255.99 * gamma_cor.g) as u8;
+    let ib = (255.99 * gamma_cor.b) as u8;
     return Rgb([ir, ig, ib]);
 }
 
@@ -46,7 +55,7 @@ fn main() {
 
     let height: u32 = 100;
     let width: u32 = 200;
-    let num_of_samples = 100;
+    let num_of_samples = 50;
 
     let mut img: RgbImage = ImageBuffer::new(width, height);
 
@@ -61,7 +70,7 @@ fn main() {
                 let u = (i as f64 + random::<f64>()) / (width as f64);
                 let v = (j as f64 + random::<f64>()) / (height as f64);
                 let r = cam.get_ray(u, v);
-                col += color(&r, &*world);
+                col += color(&r, &*world, 0);
             }
             col /= num_of_samples as f64;
             img.put_pixel(i, height - j - 1, color_to_rgb(&col));
