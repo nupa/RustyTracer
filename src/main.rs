@@ -23,8 +23,6 @@ mod camera;
 mod material;
 
 fn color(ray: &Ray, world: &dyn Hittable, depth: i32) -> Color {
-    // let sphere = Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5);
-    // let hit = sphere.hit(ray, 0.0, 5000.0);
     if depth >= 50 {
         return Color::black();
     }
@@ -35,12 +33,6 @@ fn color(ray: &Ray, world: &dyn Hittable, depth: i32) -> Color {
             Some((r, a)) => a * color(&r, world, depth+1),
             None => Color::black()
         };
-        // let target = h.p + h.normal + random_unit_vector();
-        /* let r = h.normal.x + 1.0;
-        let g = h.normal.y + 1.0;
-        let b = h.normal.z + 1.0; */
-        // return 0.5*Color::new(r, g, b);
-        // return 0.5 * color(&Ray::new(h.p, target - h.p), world, depth +1);
     }
 
     let unit_direction = ray.direction.normalize();
@@ -59,22 +51,22 @@ fn color_to_rgb(color: &Color) -> Rgb<u8> {
 fn main() {
     let now = Instant::now();
 
-    let height: u32 = 200;
-    let width: u32 = 300;
+    let height: u32 = 320;
+    let width: u32 = 640;
     let num_of_samples = 50;
 
     let mut img: RgbImage = ImageBuffer::new(width, height);
 
-    let world = create_world();
+    let world = create_random_scene();
 
     /*let look_from = Point3::new(3.0, 3.0, 2.0);
     let look_at = Point3::new(0.0, 0.0, -1.0);
     let dist_to_focus = (look_from - look_at).magnitude();*/
 
-    let look_from = Point3::new(3.0, 3.0, 2.0);
-    let look_at = Point3::new(0.0, 0.0, -1.0);
-    let dist_to_focus = (look_from - look_at).magnitude();
-    let cam = Camera::new(look_from, look_at, Vector3::new(0.0, 1.0, 0.0), 20.0, width as f64/height as f64, 0.5, dist_to_focus);
+    let look_from = Point3::new(13.0, 2.0, 3.0);
+    let look_at = Point3::new(0.0, 0.0, 0.0);
+    let dist_to_focus = 10.0;
+    let cam = Camera::new(look_from, look_at, Vector3::new(0.0, 1.0, 0.0), 20.0, width as f64/height as f64, 0.1, dist_to_focus);
 
     for j in 0..height {
         print!("starting row {} ...", j);
@@ -115,13 +107,27 @@ fn create_world() -> Box<dyn Hittable> {
 fn create_random_scene() -> Box<dyn Hittable> {
     let mut vec: Vec<Box<dyn Hittable>> = vec![];
 
-    vec.push(Box::new(Sphere::new(Point3::new(0.0,-100.0, 0.0), 1000.0, Box::new(Lambertian::new(Color::new(0.5, 0.5, 0.5))))));
+    vec.push(Box::new(Sphere::new(Point3::new(0.0,-1000.0, 0.0), 1000.0, Box::new(Lambertian::new(Color::new(0.5, 0.5, 0.5))))));
 
     for a in -11..11 {
         for b in -11..11 {
-
+            let choose_mat = random::<f64>();
+            let center = Point3::new(a as f64 + 0.9*random::<f64>(), 0.2, b as f64 + 0.9 * random::<f64>());
+            if (center.to_vec() - Vector3::new(4.0, 0.2, 0.0)).magnitude() > 0.9 {
+                if choose_mat < 0.8 {
+                    let albedo = Color::new(random::<f64>() * random::<f64>(), random::<f64>() * random::<f64>(), random::<f64>() * random::<f64>());
+                    vec.push(Box::new(Sphere::new(center, 0.2, Box::new(Lambertian::new(albedo)))));
+                } else if choose_mat < 0.95 {
+                    let albedo = Color::new(0.5 * (1.0 + random::<f64>()), 0.5 * (1.0 + random::<f64>()), 0.5 * (1.0 + random::<f64>()));
+                    let fuzz = 0.5 * random::<f64>();
+                    vec.push(Box::new(Sphere::new(center, 0.2, Box::new(Metal::new(albedo, fuzz)))));
+                } else {
+                    vec.push(Box::new(Sphere::new(center, 0.2, Box::new(Dielectric::new(1.5)))));
+                }
+            }
         }
     }
+
     vec.push(Box::new(Sphere::new(Point3::new(0.0, 1.0, 0.0), 1.0, Box::new(Dielectric::new(1.5)))));
     vec.push(Box::new(Sphere::new(Point3::new(-4.0, 1.0, 0.0), 1.0, Box::new(Lambertian::new(Color::new(0.4, 0.2, 0.1))))));
     vec.push(Box::new(Sphere::new(Point3::new(4.0, 1.0, 0.0), 1.0, Box::new(Metal::new(Color::new(0.7, 0.6, 0.5), 0.0)))));

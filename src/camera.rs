@@ -26,11 +26,6 @@ impl Camera {
         let u = vup.cross(w).normalize();
         let v = w.cross(u);
 
-        println!("camera, lower left: ({}, {}, {})", -half_width, -half_height, -1.0);
-
-        let foo: Point3<f64> = look_from - half_width * u - half_height * v - w;
-        println!("foo: {} {} {}", foo.x, foo.y, foo.z);
-
         Camera {
             origin: look_from, //Point3::new(0.0, 0.0, 0.0),
             lower_left_corner: look_from - half_width * focal_distance * u - half_height * focal_distance * v - focal_distance * w,
@@ -46,7 +41,6 @@ impl Camera {
     pub fn get_ray(&self, s: f64, t: f64) -> Ray {
         let rd = self.lens_radius * random_in_unit_disk();
         let offset = self.u * rd.x + self.v * rd.y;
-        // println!("offset: {},{},{}", offset.x, offset.y, offset.z);
         let direction = (self.lower_left_corner + s *self.horizontal + t *self.vertical) - self.origin - offset;
         return Ray::new(self.origin + offset, direction);
     }
