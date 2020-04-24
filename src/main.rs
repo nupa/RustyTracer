@@ -11,7 +11,8 @@ use std::f64;
 use crate::camera::Camera;
 use rand::random;
 use std::time::Instant;
-use crate::material::{random_in_unit_sphere, random_unit_vector};
+use crate::material::{Lambertian, Metal, Dielectric};
+use std::f64::consts::PI;
 
 mod ray;
 mod color;
@@ -29,12 +30,17 @@ fn color(ray: &Ray, world: &dyn Hittable, depth: i32) -> Color {
     }
 
     if let Some(h) = world.hit(ray, 0.001, f64::MAX) {
-        let target = h.p + h.normal + random_unit_vector();
+        let s = h.material.scatter(ray, &h);
+        return match s {
+            Some((r, a)) => a * color(&r, world, depth+1),
+            None => Color::black()
+        };
+        // let target = h.p + h.normal + random_unit_vector();
         /* let r = h.normal.x + 1.0;
         let g = h.normal.y + 1.0;
         let b = h.normal.z + 1.0; */
         // return 0.5*Color::new(r, g, b);
-        return 0.5 * color(&Ray::new(h.p, target - h.p), world, depth +1);
+        // return 0.5 * color(&Ray::new(h.p, target - h.p), world, depth +1);
     }
 
     let unit_direction = ray.direction.normalize();
@@ -86,8 +92,13 @@ fn main() {
 
 fn create_world() -> Box<dyn Hittable> {
     let mut vec: Vec<Box<dyn Hittable>> = vec![];
-    vec.push(Box::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5)));
-    vec.push(Box::new(Sphere::new(Point3::new(0.0,-100.5,-1.0), 100.0)));
+    vec.push(Box::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5, Box::new(Lambertian::new(Color::new(0.1, 0.2, 0.5))))));
+    vec.push(Box::new(Sphere::new(Point3::new(0.0,-100.5,-1.0), 100.0, Box::new(Lambertian::new(Color::new(0.8, 0.8, 0.0))))));
+
+    vec.push(Box::new(Sphere::new(Point3::new(1.0, 0.0, -1.0), 0.5, Box::new(Metal::new(Color::new(0.8, 0.6, 0.2), 0.3)))));
+    // vec.push(Box::new(Sphere::new(Point3::new(-1.0,0.0, -1.0), 0.5, Box::new(Metal::new(Color::new(0.8, 0.8, 0.8), 1.0)))));
+    vec.push(Box::new(Sphere::new(Point3::new(-1.0,0.0, -1.0), 0.5, Box::new(Dielectric::new(1.5)))));
+    vec.push(Box::new(Sphere::new(Point3::new(-1.0,0.0, -1.0), -0.45, Box::new(Dielectric::new(1.5)))));
 
     return Box::new(HittableList::new(vec));
 }
