@@ -2,6 +2,7 @@
   <dictionary name="pakerman">
     <words>
       <w>frontface</w>
+      <w>lambertian</w>
     </words>
   </dictionary>
 </component>
