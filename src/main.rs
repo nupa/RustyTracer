@@ -59,17 +59,25 @@ fn color_to_rgb(color: &Color) -> Rgb<u8> {
 fn main() {
     let now = Instant::now();
 
-    let height: u32 = 100;
-    let width: u32 = 200;
+    let height: u32 = 200;
+    let width: u32 = 300;
     let num_of_samples = 50;
 
     let mut img: RgbImage = ImageBuffer::new(width, height);
 
     let world = create_world();
 
-    let cam = Camera::new();
+    /*let look_from = Point3::new(3.0, 3.0, 2.0);
+    let look_at = Point3::new(0.0, 0.0, -1.0);
+    let dist_to_focus = (look_from - look_at).magnitude();*/
+
+    let look_from = Point3::new(3.0, 3.0, 2.0);
+    let look_at = Point3::new(0.0, 0.0, -1.0);
+    let dist_to_focus = (look_from - look_at).magnitude();
+    let cam = Camera::new(look_from, look_at, Vector3::new(0.0, 1.0, 0.0), 20.0, width as f64/height as f64, 0.5, dist_to_focus);
 
     for j in 0..height {
+        print!("starting row {} ...", j);
         for i in 0..width {
             let mut col = Color::black();
             for _s in 0..num_of_samples {
@@ -81,6 +89,7 @@ fn main() {
             col /= num_of_samples as f64;
             img.put_pixel(i, height - j - 1, color_to_rgb(&col));
         }
+        println!("done.");
     }
 
     img.save("images/output.png").expect("Talletus epäonnistui");
@@ -99,6 +108,23 @@ fn create_world() -> Box<dyn Hittable> {
     // vec.push(Box::new(Sphere::new(Point3::new(-1.0,0.0, -1.0), 0.5, Box::new(Metal::new(Color::new(0.8, 0.8, 0.8), 1.0)))));
     vec.push(Box::new(Sphere::new(Point3::new(-1.0,0.0, -1.0), 0.5, Box::new(Dielectric::new(1.5)))));
     vec.push(Box::new(Sphere::new(Point3::new(-1.0,0.0, -1.0), -0.45, Box::new(Dielectric::new(1.5)))));
+
+    return Box::new(HittableList::new(vec));
+}
+
+fn create_random_scene() -> Box<dyn Hittable> {
+    let mut vec: Vec<Box<dyn Hittable>> = vec![];
+
+    vec.push(Box::new(Sphere::new(Point3::new(0.0,-100.0, 0.0), 1000.0, Box::new(Lambertian::new(Color::new(0.5, 0.5, 0.5))))));
+
+    for a in -11..11 {
+        for b in -11..11 {
+
+        }
+    }
+    vec.push(Box::new(Sphere::new(Point3::new(0.0, 1.0, 0.0), 1.0, Box::new(Dielectric::new(1.5)))));
+    vec.push(Box::new(Sphere::new(Point3::new(-4.0, 1.0, 0.0), 1.0, Box::new(Lambertian::new(Color::new(0.4, 0.2, 0.1))))));
+    vec.push(Box::new(Sphere::new(Point3::new(4.0, 1.0, 0.0), 1.0, Box::new(Metal::new(Color::new(0.7, 0.6, 0.5), 0.0)))));
 
     return Box::new(HittableList::new(vec));
 }
